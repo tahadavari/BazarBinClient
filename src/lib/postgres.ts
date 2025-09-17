@@ -139,14 +139,14 @@ function looksLikeUuid(value: string): boolean {
 
 function looksLikeJson(value: string): boolean {
   const trimmed = value.trim()
-  if (!trimmed || !/[\[{]/.test(trimmed[0])) {
+  if (!trimmed || (trimmed[0] !== "{" && trimmed[0] !== "[")) {
     return false
   }
 
   try {
     const parsed = JSON.parse(trimmed)
     return typeof parsed === "object" && parsed !== null
-  } catch (error) {
+  } catch {
     return false
   }
 }
