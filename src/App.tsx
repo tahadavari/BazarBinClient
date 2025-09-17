@@ -132,17 +132,19 @@ export default function App() {
   )
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold">درون‌ریزی CSV به پایگاه داده</h1>
-          <p className="text-muted-foreground">
+    <main className="min-h-screen bg-gradient-to-b from-background via-muted/40 to-background">
+      <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pb-16 pt-12 sm:px-6 lg:px-12">
+        <header className="flex flex-col gap-3 text-right">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            درون‌ریزی CSV به پایگاه داده
+          </h1>
+          <p className="text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
             فایل CSV خود را انتخاب کنید، تنظیمات ستون‌ها را بررسی کنید و برای بارگذاری در PostgreSQL آماده شوید.
           </p>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="h-fit">
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="h-fit border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
                 <Upload className="h-4 w-4" /> انتخاب فایل CSV
@@ -207,7 +209,7 @@ export default function App() {
             </CardContent>
           </Card>
 
-          <Card className="h-fit">
+          <Card className="h-fit border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold">تنظیمات جدول مقصد</CardTitle>
               <CardDescription>
@@ -260,7 +262,7 @@ export default function App() {
           </Card>
         </div>
 
-        <Card>
+        <Card className="border-border/70 shadow-xl shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-base font-semibold">پیکربندی ستون‌ها</CardTitle>
             <CardDescription>
@@ -407,7 +409,7 @@ export default function App() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </section>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent>
@@ -449,7 +451,7 @@ export default function App() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   )
 }
 
