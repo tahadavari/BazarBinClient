@@ -196,3 +196,37 @@ input[type="checkbox"]:focus-visible {
     @apply bg-background text-foreground antialiased;
   }
 }
+.markdown-body {
+  direction: rtl;
+}
+
+.markdown-body > * + * {
+  margin-top: 0.75rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-right: 1.25rem;
+  margin: 0;
+}
+
+.markdown-body li {
+  margin: 0.25rem 0;
+}
+
+.markdown-body pre {
+  direction: ltr;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background-color: color-mix(in oklch, var(--primary) 8%, white);
+  font-size: 0.875rem;
+  overflow-x: auto;
+}
+
+.markdown-body code {
+  direction: ltr;
+  font-family: "Fira Code", "Cascadia Code", monospace;
+  background-color: color-mix(in oklch, var(--primary) 10%, white);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.375rem;
+}
