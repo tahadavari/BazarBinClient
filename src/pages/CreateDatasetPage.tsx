@@ -412,42 +412,43 @@ export default function CreateDatasetPage() {
       </section>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent>
+        <DialogContent className="w-fit max-w-[95vw] sm:max-w-[95vw]">
           <DialogHeader>
             <DialogTitle>پیش‌نمایش داده‌های CSV</DialogTitle>
           </DialogHeader>
           {!rawData.length ? (
             <p className="text-sm text-muted-foreground">هنوز داده‌ای برای نمایش وجود ندارد.</p>
           ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                فقط {Math.min(previewRows.length, MAX_PREVIEW_ROWS)} ردیف اول نمایش داده می‌شود.
-              </p>
-              <div className="max-h-[520px] overflow-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead>
+              <div className="space-y-3 inline-block">
+                <p className="text-sm text-muted-foreground">
+                  فقط {Math.min(previewRows.length, MAX_PREVIEW_ROWS)} ردیف اول نمایش داده می‌شود.
+                </p>
+                <div className="inline-block max-h-[70vh] max-w-[90vw] overflow-auto rounded-lg border">
+                  <table className="min-w-max text-sm">
+                    <thead>
                     <tr className="border-b bg-muted/60">
                       {preparedHeader.map((header, index) => (
-                        <th key={`head-${index}`} className="px-3 py-2 text-right font-medium">
-                          {header || `ستون ${index + 1}`}
-                        </th>
+                          <th key={`head-${index}`} className="px-3 py-2 text-right font-medium whitespace-nowrap">
+                            {header || `ستون ${index + 1}`}
+                          </th>
                       ))}
                     </tr>
-                  </thead>
-                  <tbody>
+                    </thead>
+                    <tbody>
                     {previewRows.map((row, rowIndex) => (
-                      <tr key={`row-${rowIndex}`} className="border-b last:border-b-0">
-                        {preparedHeader.map((_, colIndex) => (
-                          <td key={`cell-${rowIndex}-${colIndex}`} className="px-3 py-2 text-right">
-                            {row[colIndex] ?? ""}
-                          </td>
-                        ))}
-                      </tr>
+                        <tr key={`row-${rowIndex}`} className="border-b last:border-b-0">
+                          {preparedHeader.map((_, colIndex) => (
+                              <td key={`cell-${rowIndex}-${colIndex}`}
+                                  className="px-3 py-2 text-right whitespace-nowrap">
+                                {row[colIndex] ?? ""}
+                              </td>
+                          ))}
+                        </tr>
                     ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
           )}
         </DialogContent>
       </Dialog>
