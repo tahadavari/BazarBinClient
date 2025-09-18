@@ -252,7 +252,7 @@ export default function CreateDatasetPage() {
                     اگر این گزینه را غیرفعال کنید، ستون‌ها با نام‌های پیش‌فرض ساخته می‌شوند.
                   </p>
                 </div>
-                <Switch
+                <Switch dir='ltr'
                   checked={useFirstRowAsHeader}
                   onCheckedChange={(checked: boolean) => setUseFirstRowAsHeader(checked)}
                   aria-label="ردیف اول شامل نام ستون‌ها باشد"
