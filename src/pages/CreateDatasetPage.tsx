@@ -1,7 +1,8 @@
-﻿import type {ChangeEvent} from "react"
+import type {ChangeEvent} from "react"
 import {useEffect, useMemo, useRef, useState} from "react"
+import {useNavigate} from "react-router-dom"
 import type {CheckedState} from "@radix-ui/react-checkbox"
-import {Eye, FileText, Upload} from "lucide-react"
+import {Eye, FileText, Loader2, Upload} from "lucide-react"
 
 import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
@@ -15,6 +16,8 @@ import {Switch} from "@/components/ui/switch"
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table"
 import {Textarea} from "@/components/ui/textarea"
 import {parseCsv} from "@/lib/csv"
+import {IMPORTS_ENDPOINT} from "@/lib/api"
+import {buildImportFormData, createImportSchema} from "@/lib/imports"
 import type {PostgresDataType} from "@/lib/postgres"
 import {getIdentifierError, inferPostgresType, POSTGRES_DATA_TYPES, sanitizeIdentifier,} from "@/lib/postgres"
 
@@ -36,6 +39,7 @@ type ColumnConfig = {
 const MAX_PREVIEW_ROWS = 15
 
 export default function CreateDatasetPage() {
+    const navigate = useNavigate()
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const [file, setFile] = useState<File | null>(null)
     const [rawData, setRawData] = useState<string[][]>([])
@@ -51,6 +55,8 @@ export default function CreateDatasetPage() {
     const [tableComment, setTableComment] = useState("")
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState<string | null>(null)
 
     const tableNameError = useMemo(() => getIdentifierError(tableName), [tableName])
     const preparedHeader = useMemo(() => {
@@ -88,6 +94,7 @@ export default function CreateDatasetPage() {
 
         setFile(selectedFile)
         setParseError("")
+        setSubmitError(null)
         setIsParsing(true)
 
         try {
@@ -101,7 +108,7 @@ export default function CreateDatasetPage() {
             setTableName(suggestedTableName)
         } catch (error) {
             console.error(error)
-            setParseError("خطایی در خواندن فایل رخ داد. لطفا دوباره تلاش کنید.")
+            setParseError("خطایی در خواندن فایل رخ داد. لفا دوباره تلاش کنید.")
             setRawData([])
             setColumns([])
         } finally {
@@ -119,12 +126,78 @@ export default function CreateDatasetPage() {
         setDelimiter(",")
         setParseError("")
         setTableName("")
+        setSubmitError(null)
     }
 
     const selectedColumnCount = useMemo(
         () => columns.filter((column) => column.include).length,
         [columns]
     )
+
+    const canSubmit = Boolean(file) && !isParsing && !isSubmitting && !tableNameError && selectedColumnCount > 0
+
+    const handleImportSubmit = async () => {
+        if (!file) {
+            setSubmitError("لطفا ابتدا فایل CSV خود را انتخاب کنید.")
+            return
+        }
+        if (tableNameError) {
+            setSubmitError(tableNameError)
+            return
+        }
+        if (!selectedColumnCount) {
+            setSubmitError("حداقل یک ستون باید برای درون‌ریزی فعال باشد.")
+            return
+        }
+
+        setIsSubmitting(true)
+        setSubmitError(null)
+
+        try {
+            const schema = createImportSchema({
+                tableName,
+                tableComment,
+                useFirstRowAsHeader,
+                columns: columns.map((column) => ({
+                    include: column.include,
+                    tableColumnName: column.tableColumnName,
+                    dataType: column.dataType,
+                    comment: column.comment,
+                })),
+            })
+
+            const formData = buildImportFormData(schema, file)
+            const response = await fetch(IMPORTS_ENDPOINT, {
+                method: "POST",
+                body: formData,
+            })
+
+            const responseText = await response.text()
+            let parsedResponse: unknown = null
+            if (responseText) {
+                try {
+                    parsedResponse = JSON.parse(responseText)
+                } catch {
+                    parsedResponse = responseText
+                }
+            }
+
+            if (!response.ok) {
+                const errorMessage = extractErrorMessage(parsedResponse, response.status)
+                throw new Error(errorMessage)
+            }
+
+            navigate("/", {state: {importResult: parsedResponse}})
+        } catch (error) {
+            console.error(error)
+            const message = error instanceof Error && error.message
+                ? error.message
+                : "خطایی در زمان ارسال درخواست رخ داد. لطفا دوباره تلاش کنید."
+            setSubmitError(message)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
     return (
         <main className="min-h-screen bg-gradient-to-b from-background via-muted/40 to-background">
@@ -141,7 +214,8 @@ export default function CreateDatasetPage() {
 
                 <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
                     <Card
-                        className="h-fit border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm">
+                        className="h-fit border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm"
+                    >
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base font-semibold">
                                 <Upload className="h-4 w-4"/> انتخاب فایل CSV
@@ -207,7 +281,8 @@ export default function CreateDatasetPage() {
                     </Card>
 
                     <Card
-                        className="h-fit border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm">
+                        className="h-fit border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm"
+                    >
                         <CardHeader>
                             <CardTitle className="text-base font-semibold">تنظیمات جدول مقصد</CardTitle>
                             <CardDescription>
@@ -250,7 +325,7 @@ export default function CreateDatasetPage() {
                                         اگر این گزینه را غیرفعال کنید، ستون‌ها با نام‌های پیش‌فرض ساخته می‌شوند.
                                     </p>
                                 </div>
-                                <Switch dir='ltr'
+                                <Switch dir="ltr"
                                         checked={useFirstRowAsHeader}
                                         onCheckedChange={(checked: boolean) => setUseFirstRowAsHeader(checked)}
                                         aria-label="ردیف اول شامل نام ستون‌ها باشد"
@@ -412,6 +487,40 @@ export default function CreateDatasetPage() {
                         )}
                     </CardContent>
                 </Card>
+
+                <Card className="border-border/70 shadow-lg shadow-primary/5 supports-[backdrop-filter]:backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="text-base font-semibold">ارسال برای درون‌ریزی</CardTitle>
+                        <CardDescription>
+                            پس از تایید تنظیمات، فایل و تنظیمات ستون‌ها به سرور ارسال می‌شوند.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                            <p>ستون‌های انتخاب‌شده: {selectedColumnCount}</p>
+                            <p>نام جدول مقصد: {tableName || "(نام مشخص نشده)"}</p>
+                            <p>ردیف اول شامل عنوان ستون‌ها: {useFirstRowAsHeader ? "بله" : "خیر"}</p>
+                        </div>
+                        {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                className="gap-2"
+                                onClick={handleImportSubmit}
+                                disabled={!canSubmit}
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin"/>
+                                        در حال ارسال...
+                                    </>
+                                ) : (
+                                    "شروع درون‌ریزی"
+                                )}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </section>
 
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
@@ -458,6 +567,22 @@ export default function CreateDatasetPage() {
             </Dialog>
         </main>
     )
+}
+
+function extractErrorMessage(payload: unknown, status: number): string {
+    if (payload && typeof payload === "object") {
+        const record = payload as Record<string, unknown>
+        const messageCandidate = record.message ?? record.error ?? record.detail
+        if (typeof messageCandidate === "string" && messageCandidate.trim().length > 0) {
+            return `خطا در درون‌ریزی: ${messageCandidate}`
+        }
+    }
+
+    if (typeof payload === "string" && payload.trim().length > 0) {
+        return `خطا در درون‌ریزی: ${payload}`
+    }
+
+    return `خطا در درون‌ریزی (کد ${status})`
 }
 
 function formatBytes(bytes: number): string {

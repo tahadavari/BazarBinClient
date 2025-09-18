@@ -5,6 +5,7 @@ import {ArrowLeft, Loader2, RefreshCcw} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table"
+import {DATASETS_ENDPOINT} from "@/lib/api"
 
 type Dataset = {
     id: number
@@ -12,8 +13,6 @@ type Dataset = {
     tableName: string
     importedAt: string
 }
-
-const DATASETS_ENDPOINT = "http://localhost:5275/datasets"
 
 export default function DatasetListPage() {
     const [datasets, setDatasets] = useState<Dataset[]>([])
