@@ -7,6 +7,7 @@ import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import {Label} from "@/components/ui/label"
 import {Textarea} from "@/components/ui/textarea"
+import {PromptChart, type ChartPayload} from "@/components/prompt-chart"
 import {buildDatasetPromptEndpoint, DATASETS_ENDPOINT} from "@/lib/api"
 
 type DatasetSummary = {
@@ -18,8 +19,10 @@ type DatasetSummary = {
 }
 
 type PromptResponse = {
+    prompt?: string
     response?: string
     promptWithSchema?: string
+    chart?: ChartPayload | null
 }
 
 type LocationState = {
@@ -37,7 +40,7 @@ export default function DatasetPromptPage() {
     const [datasetError, setDatasetError] = useState<string | null>(null)
 
     const [prompt, setPrompt] = useState("")
-    const [response, setResponse] = useState<string | null>(null)
+    const [promptResult, setPromptResult] = useState<PromptResponse | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -102,6 +105,11 @@ export default function DatasetPromptPage() {
         return `دیتاست شماره ${datasetId}`
     }, [dataset, datasetId])
 
+    const responseText = promptResult?.response
+    const hasResponseText = typeof responseText === "string" && responseText.trim().length > 0
+    const chartPayload = promptResult?.chart ?? null
+    const hasChart = Boolean(chartPayload && Array.isArray(chartPayload.data) && chartPayload.data.length > 0)
+
     if (!datasetId) {
         return <Navigate to="/" replace/>
     }
@@ -115,7 +123,7 @@ export default function DatasetPromptPage() {
             return
         }
 
-        setResponse(null)
+        setPromptResult(null)
         setIsSubmitting(true)
         setSubmitError(null)
 
@@ -134,10 +142,15 @@ export default function DatasetPromptPage() {
             }
 
             const data = (await res.json()) as PromptResponse
-            if (typeof data.response === "string" && data.response.length > 0) {
-                setResponse(data.response)
+            const hasResponseText =
+                typeof data.response === "string" && data.response.trim().length > 0
+            const hasChartData =
+                !!data.chart && Array.isArray(data.chart.data) && data.chart.data.length > 0
+
+            if (hasResponseText || hasChartData) {
+                setPromptResult(data)
             } else {
-                setResponse(null)
+                setPromptResult(null)
                 setSubmitError("????? ?? ????? ?????? ???.")
             }
         } catch (error) {
@@ -211,7 +224,7 @@ export default function DatasetPromptPage() {
                     </CardContent>
                 </Card>
 
-                {response ? (
+                {hasResponseText ? (
                     <Card className="border-border/70 shadow-md">
                         <CardHeader className="text-right">
                             <CardTitle>پاسخ تولید شده</CardTitle>
@@ -219,8 +232,20 @@ export default function DatasetPromptPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="markdown-body text-right text-sm leading-7 sm:text-base">
-                                <ReactMarkdown>{response}</ReactMarkdown>
+                                <ReactMarkdown>{responseText ?? ""}</ReactMarkdown>
                             </div>
+                        </CardContent>
+                    </Card>
+                ) : null}
+
+                {hasChart && chartPayload ? (
+                    <Card className="border-border/70 shadow-md">
+                        <CardHeader className="text-right">
+                            <CardTitle>نمودار پیشنهادی</CardTitle>
+                            <CardDescription>خروجی تصویری بر اساس داده‌های کوئری.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PromptChart chart={chartPayload}/>
                         </CardContent>
                     </Card>
                 ) : null}
