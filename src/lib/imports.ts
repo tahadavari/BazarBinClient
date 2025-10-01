@@ -16,7 +16,7 @@ export type ImportColumnSchema = {
 export type ImportSchema = {
     TableName: string
     TableComment?: string
-    FirstRowIsHeader: 0 | 1
+    FirstRowIsHeader: boolean
     Columns: ImportColumnSchema[]
 }
 
@@ -50,7 +50,7 @@ export function createImportSchema(options: {
 
     const schema: ImportSchema = {
         TableName: trimmedTableName,
-        FirstRowIsHeader: options.useFirstRowAsHeader ? 1 : 0,
+        FirstRowIsHeader: options.useFirstRowAsHeader,
         Columns: columns,
     }
 
@@ -64,12 +64,7 @@ export function createImportSchema(options: {
 
 export function buildImportFormData(schema: ImportSchema, file: File): FormData {
     const formData = new FormData()
-    formData.append(
-        "schema",
-        new File([JSON.stringify(schema)], "schema.json", {
-            type: "application/json",
-        })
-    )
+    formData.append("schema", JSON.stringify(schema))
     formData.append("file", file, file.name)
     return formData
 }
